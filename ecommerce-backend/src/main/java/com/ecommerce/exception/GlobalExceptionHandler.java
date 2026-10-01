@@ -59,13 +59,13 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ErrorDetails> handleBadCredentialsException(BadCredentialsException ex, HttpServletRequest request) {
+    @ExceptionHandler({BadCredentialsException.class, org.springframework.security.core.AuthenticationException.class})
+    public ResponseEntity<ErrorDetails> handleAuthenticationException(Exception ex, HttpServletRequest request) {
         ErrorDetails error = ErrorDetails.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.UNAUTHORIZED.value())
                 .error(HttpStatus.UNAUTHORIZED.getReasonPhrase())
-                .message("Invalid email or password")
+                .message("Invalid email or password. Please check your credentials, or click 'Create an account' to register.")
                 .path(request.getRequestURI())
                 .build();
         return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);

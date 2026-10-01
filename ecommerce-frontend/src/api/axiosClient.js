@@ -1,20 +1,27 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+// Automatically normalize baseURL: ensure /api suffix and strip trailing slashes
+let rawBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+rawBaseUrl = rawBaseUrl.trim().replace(/\/+$/, '');
+if (!rawBaseUrl.endsWith('/api')) {
+  rawBaseUrl = `${rawBaseUrl}/api`;
+}
+const API_BASE_URL = rawBaseUrl;
 
 const axiosClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 15000,
+  timeout: 20000,
 });
 
-// Request Interceptor: Attach JWT Token
+// Request Interceptor: Attach JWT Token only when valid and not on login/register
 axiosClient.interceptors.request.use(
   (config) => {
+    const isAuthEndpoint = config.url && (config.url.includes('/auth/login') || config.url.includes('/auth/register'));
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && token !== 'undefined' && token !== 'null' && !isAuthEndpoint) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -41,7 +48,9 @@ axiosClient.interceptors.response.use(
           window.dispatchEvent(new Event('auth:unauthorized'));
         }
       }
-      return Promise.reject(error.response.data || error.response);
+      const data = error.response.data;
+      const message = (data && (data.message || data.error)) || 'Authentication error';
+      return Promise.reject({ message, status: error.response.status, ...data });
     }
     return Promise.reject({ message: error.message || 'Network error, please check connection' });
   }

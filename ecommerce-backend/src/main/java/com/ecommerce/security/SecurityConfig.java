@@ -41,17 +41,20 @@ public class SecurityConfig {
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.setContentType("application/json");
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.getWriter().write("{\"success\":false,\"message\":\"Unauthorized: " + authException.getMessage() + "\"}");
+                            response.getWriter().write("{\"success\":false,\"message\":\"Please sign in to access your account\"}");
                         })
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
-                        .requestMatchers("/", "/api/health").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/ai/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products/*/reviews").permitAll()
+                        // Preflight CORS requests
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // Public endpoints (both /api and non-/api variants)
+                        .requestMatchers("/", "/health", "/api/health").permitAll()
+                        .requestMatchers("/api/auth/**", "/auth/**").permitAll()
+                        .requestMatchers("/api/ai/**", "/ai/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/**", "/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/*/reviews", "/products/*/reviews").permitAll()
                         .requestMatchers("/error").permitAll()
 
                         // Reviews submission for authenticated customers
